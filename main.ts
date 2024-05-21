@@ -1,8 +1,10 @@
 import { App, Editor, MarkdownView, Modal, Menu, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { WorkTimeSettings } from './settings';
 import { TimeVisualisation, VIEW_TYPE_EXAMPLE} from './view';
 
 interface MyPluginSettings {
 	mySetting: string;
+	categories: string[];
 }
 
 interface WorkTimeElement{
@@ -13,14 +15,20 @@ interface WorkTimeElement{
 
 }
 
-export default class HelloWorldPlugin extends Plugin {
+const DEFAULT_SETTINGS: MyPluginSettings = {
+	mySetting: 'default',
+	categories: ['PhD', 'Teaching', 'Personal'],
+}
+
+export default class TimeTracker extends Plugin {
 
 	async onload() {
 		console.log("The plugin has been loaded.")
-		//this.registerView(
-		//	VIEW_TYPE_EXAMPLE,
-		//	(leaf) => new TimeVisualisation(leaf)
-		//);
+
+		await this.loadSettings();
+
+		this.addSettingTab(new WorkTimeSettings(this.app, this));
+
 		this.addRibbonIcon('timer', 'Open Menu', (event) => {
 			this.activateView();
 		});
@@ -38,25 +46,6 @@ export default class HelloWorldPlugin extends Plugin {
 	onunload() {
 		console.log("The plugin has been unloaded.")
 
-	}
-	async activateView() {
-		const { workspace } = this.app;
-
-		let leaf: WorkspaceLeaf | null = null;
-		const leaves = workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
-
-		if (leaves.length > 0) {
-		// A leaf with our view already exists, use that
-			leaf = leaves[0];
-		} else {
-		// Our view could not be found in the workspace, create a new leaf
-		// in the right sidebar for it
-		leaf = workspace.getRightLeaf(false);
-		await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });
-		}
-
-		// "Reveal" the leaf in case it is in a collapsed sidebar
-		workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings() {
@@ -168,28 +157,3 @@ export class SampleModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-}
