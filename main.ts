@@ -1,6 +1,5 @@
 import { App, Editor, MarkdownView, Modal, Menu, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-
-// Remember to rename these classes and interfaces!
+import { TimeVisualisation, VIEW_TYPE_EXAMPLE} from './view';
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -18,26 +17,12 @@ export default class HelloWorldPlugin extends Plugin {
 
 	async onload() {
 		console.log("The plugin has been loaded.")
-		this.addRibbonIcon('dice', 'Open Menu', (event) => {
-			const menu = new Menu();
-
-			menu.addItem((item) => 
-				item
-					.setTitle("Copy")
-					.setIcon("documents")
-					.onClick(() => {
-						new Notice("Copied");
-				})
-			)
-			menu.addItem((item) => 
-				item
-					.setTitle("Paste")
-					.setIcon("paste")
-					.onClick(() => {
-						new Notice("Pasted");
-				})
-			)
-			menu.showAtMouseEvent(event);
+		//this.registerView(
+		//	VIEW_TYPE_EXAMPLE,
+		//	(leaf) => new TimeVisualisation(leaf)
+		//);
+		this.addRibbonIcon('timer', 'Open Menu', (event) => {
+			this.activateView();
 		});
 		this.addCommand({
 			id: "add-time-element",
@@ -53,6 +38,25 @@ export default class HelloWorldPlugin extends Plugin {
 	onunload() {
 		console.log("The plugin has been unloaded.")
 
+	}
+	async activateView() {
+		const { workspace } = this.app;
+
+		let leaf: WorkspaceLeaf | null = null;
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
+
+		if (leaves.length > 0) {
+		// A leaf with our view already exists, use that
+			leaf = leaves[0];
+		} else {
+		// Our view could not be found in the workspace, create a new leaf
+		// in the right sidebar for it
+		leaf = workspace.getRightLeaf(false);
+		await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });
+		}
+
+		// "Reveal" the leaf in case it is in a collapsed sidebar
+		workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings() {
@@ -130,8 +134,8 @@ export class SampleModal extends Modal {
 					this.workTimeElement.end_time = value
 		}) );
 		new Setting(contentEl)
+			.setName("Details")
 			.addText((text) => text.onChange(
-				.setName("Details")
 				(value) => {
 					this.workTimeElement.details = value
 		}) );
